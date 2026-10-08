@@ -140,3 +140,45 @@ Ambas alternativas corrigen el bloqueo de permisos del host sin cambiar `package
 - **Verificado:** las cinco afirmaciones principales A1–A5 y la arquitectura frontend/backend documentada.
 - **Funciona:** el servidor frontend dentro de Docker responde HTTP 200.
 - **Pendiente:** la ruta `/api/metrics` sigue expirando; su causa raíz no está identificada. En Codespaces faltan dependencias locales, `npm ci` está bloqueado por permisos y el build aún no ha podido ejecutarse.
+
+## Fase 3 — Validación de reglas de agentes
+
+Se registran tres ejecuciones de prueba realizadas al aplicar las reglas frontend y backend. Los resultados de tests comprueban el comportamiento del código; la aplicación de reglas se evalúa por separado según el cambio observado. Estas pruebas no validan todas las reglas de los archivos.
+
+| Prueba | Objetivo | Resultado del test automático | Validación de reglas |
+|---|---|---|---|
+| Frontend: ingresos cero | Comprobar la fórmula de margen cuando no hay ingresos. | En host: `npm test` no arrancó (`vitest: not found`). En Docker: `docker exec aie-molic-gv-financial-dashboard-context-project-frontend-1 npm test` terminó con **5 tests pasados**. | ✅ Se siguió el patrón Vitest y el test tipado; se amplió únicamente la prueba existente. |
+| Backend: operación inválida | Comprobar que `operation_type=refund` se rechaza según el contrato `Literal`. | `docker exec aie-molic-gv-financial-dashboard-context-project-backend-1 pytest tests/test_routes.py::test_metrics_endpoint_rejects_invalid_operation_type`: **1 pasado**, 1 advertencia. | ✅ Se usó `TestClient` y se comprobaron estado HTTP y ubicación del error; solo se modificó el archivo de tests. |
+| Backend: suite completa | Comprobar que la nueva prueba y los casos existentes siguen pasando juntos. | `docker exec aie-molic-gv-financial-dashboard-context-project-backend-1 pytest`: **16 pasados**, 1 advertencia. | ✅ Se ejecutó la suite backend completa tras el test focalizado; no se cambiaron rutas ni lógica de producción. |
+
+### 1. Frontend: margen sin ingresos
+
+- **Objetivo:** validar la regla de [frontend.md](.agents/rules/frontend.md#L39) que exige cubrir condiciones límite del cálculo, y [AGENTS.md](AGENTS.md#L42), que prescribe fixtures tipados y resultados esperados.
+- **Tarea realizada:** se pidió añadir una regresión para ingresos cero. Como ya existía un caso con solo gastos, el agente amplió ese test en vez de duplicarlo: ahora verifica `totalIncome: 0`, `totalOutcome: 350`, `profit: -350` y `profitPercent: 0` en [financial-utils.test.ts](frontend/src/lib/financial-utils.test.ts#L47).
+- **Reglas aplicadas:** Vitest, fixture `FinancialMovement` tipado y aserción sobre valores esperados. El cálculo de producción conserva la guarda `totalIncome > 0 ? ... : 0` en [financial-utils.ts](frontend/src/lib/financial-utils.ts#L31); no se modificó.
+- **Pruebas ejecutadas:** desde `frontend`, `npm test` no pudo ejecutarse en el host porque el shell informó `vitest: not found`. El mismo script en el contenedor, `docker exec aie-molic-gv-financial-dashboard-context-project-frontend-1 npm test`, pasó los 5 tests del archivo.
+- **Resultado:** ✅ regla de pruebas validada en este caso; el test pasó en Docker. La ejecución local no pudo realizarse por falta de Vitest en el host.
+- **Observaciones:** se respetó el alcance de test-only. No se validaron con esta ejecución las demás reglas frontend.
+
+### 2. Backend: valor de operación fuera del contrato
+
+- **Objetivo:** validar las reglas de [backend.md](.agents/rules/backend.md#L22) y [backend.md](.agents/rules/backend.md#L34): conservar los valores `Literal` y probar rutas con `TestClient`, verificando estado y payload.
+- **Tarea realizada:** se pidió identificar un caso límite no cubierto. Se añadió `test_metrics_endpoint_rejects_invalid_operation_type` en [test_routes.py](backend/tests/test_routes.py#L90), que envía `operation_type=refund` y espera HTTP `422` con ubicación `query.operation_type`.
+- **Evidencias del contrato:** [routes.py](backend/app/routes.py#L11) restringe `OperationType` a `income`/`outcome`; [routes.py](backend/app/routes.py#L253) usa ese alias en el parámetro de `/api/metrics`. La petición inválida es rechazada por la validación de FastAPI.
+- **Prueba focalizada ejecutada:** el comando pytest del contenedor backend pasó **1 test**; pytest emitió una advertencia deprecada de Starlette/httpx, pero la prueba terminó correctamente.
+- **Resultado:** ✅ reglas de validación de entrada y pruebas de endpoint aplicadas en este caso. No se modificaron rutas ni lógica de producción.
+- **Observaciones:** el agente eligió un valor fuera del `Literal` existente y mantuvo la nomenclatura snake_case del test, conforme a [backend.md](.agents/rules/backend.md#L16). La advertencia de dependencia no se investigó ni corrigió en esta validación.
+
+### 3. Backend: suite completa
+
+- **Objetivo:** verificar que la nueva regresión no rompe los tests existentes de filtros, respuestas y datos generados, de acuerdo con [backend.md](.agents/rules/backend.md#L34) y la indicación de verificar cambios de pruebas en [AGENTS.md](AGENTS.md#L42).
+- **Tarea realizada:** después del test focalizado, se ejecutó pytest sobre toda la suite backend.
+- **Evidencia:** comando `docker exec aie-molic-gv-financial-dashboard-context-project-backend-1 pytest`; resultado real: **16 passed**, 1 advertencia deprecada de Starlette/httpx.
+- **Resultado:** ✅ la suite existente y la regresión nueva pasan juntas en el contenedor.
+- **Observaciones:** el test de código superado verifica compatibilidad de la suite en ese entorno; por sí solo no demuestra la calidad de todas las reglas ni otros entornos de ejecución.
+
+### Evaluación conjunta
+
+Las validaciones cubrieron de forma acotada reglas de testing, límites financieros, validación del contrato FastAPI y contención de cambios en archivos de prueba. El comportamiento del agente observado coincide con esas reglas: inspeccionó implementación/tests, cambió solo los tests solicitados y ejecutó primero pruebas focalizadas y después la suite backend. Los tests frontend pasaron en Docker, no en el host; los tests backend pasaron en Docker con una advertencia no relacionada.
+
+No hay evidencia en estas validaciones que obligue a refinar las reglas probadas. Tampoco se han validado todas las reglas: quedan fuera, entre otras, nomenclatura de componentes, cambios reales de contrato entre frontend y backend, montajes/proxy de Docker y la decisión pendiente sobre zona horaria. No se afirma que toda la suite de reglas esté validada.

@@ -44,7 +44,7 @@ describe("computeKPIs", () => {
     });
   });
 
-  it("returns 0 profitPercent when there is no income", () => {
+  it("returns zero margin and negative profit when income is zero", () => {
     const onlyOutcomes: FinancialMovement[] = [
       {
         create_date: "2024-03-05",
@@ -56,7 +56,12 @@ describe("computeKPIs", () => {
     ];
 
     const metrics = computeKPIs(onlyOutcomes);
-    expect(metrics.profitPercent).toBe(0);
+    expect(metrics).toEqual({
+      totalIncome: 0,
+      totalOutcome: 350,
+      profit: -350,
+      profitPercent: 0,
+    });
   });
 });
 
