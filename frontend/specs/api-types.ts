@@ -42,3 +42,17 @@ export interface CategoryEntry {
 
 /** Array response returned by `GET /api/metrics/categories/top`. */
 export type TopCategoriesResponse = CategoryEntry[];
+
+export interface MetricsSummaryItem {
+  /** Aggregated period label; format depends on `group_by` (`day`, `week`, or `month`). */
+  period: string;
+  /** Total income for this period. */
+  income: number;
+  /** Total outcome for this period. */
+  outcome: number;
+  /** Net amount for this period: income minus outcome. */
+  net: number;
+}
+
+/** Array response returned by `GET /api/metrics/summary`. */
+export type MetricsSummaryResponse = MetricsSummaryItem[];

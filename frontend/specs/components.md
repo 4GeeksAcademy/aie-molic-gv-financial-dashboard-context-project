@@ -122,6 +122,8 @@ Contrato conceptual de props, alineado con los tipos de Fase 2:
 ❌ El requisito exige la media móvil de exactamente los tres períodos anteriores. En `backend/app/routes.py`, `detect_outcome_alerts()` calcula `baseline_average` como la media de **todos** los períodos anteriores que recibe, no de una ventana fija de tres.
 ❌ `get_metrics_alerts()` filtra los movimientos por fechas antes de resumirlos y calcular el baseline; la API actual no puede usar períodos anteriores a `start_date` para la referencia cuando el filtro está activo.
 
+**Dependencia para considerar completa la funcionalidad:** el requisito obligatorio sigue siendo la media móvil de exactamente los tres períodos anteriores. `GET /api/metrics/alerts` no satisface ese requisito y `AlertsResponse` no puede utilizarse directamente como fuente de alertas conformes al PM: su `baseline_average` refleja el cálculo incompatible del backend. La futura implementación deberá resolver esta dependencia antes de dar la funcionalidad por completada. Elegir entre adaptar el backend o disponer de datos adecuados para calcularlo en el frontend queda fuera del alcance de este ejercicio de especificación.
+
 ❌ OpenAPI acepta `threshold` desde `0` (`minimum: 0`) y no publica un máximo, mientras que el requisito del PM limita el valor a `0.01–1.0`. El default `0.3` sí coincide. `AlertsParams.threshold` es `number` y no expresa esos límites estáticamente; la especificación mantiene como regla funcional el intervalo del PM.
 
 ✅ La respuesta de alertas utiliza `period`, `outcome_total`, `baseline_average` e `increase_ratio` según `frontend/specs/api-types.ts`. El backend calcula el ratio como `(outcome_actual - baseline) / baseline` y solo genera alerta si el baseline es mayor que cero y el ratio supera estrictamente el umbral (`detect_outcome_alerts()` en `backend/app/routes.py`). Para cumplir la columna porcentual, el sistema debe presentar el ratio como porcentaje, sin confundir el ratio decimal del contrato con un valor ya multiplicado por 100.
@@ -191,7 +193,7 @@ Como integrante del equipo de finanzas, quiero comparar en una página B2B y B2C
 - `GET /api/metrics/categories/top` admite `business_type`, `operation_type`, `limit`, `start_date` y `end_date`. Para cada grupo, la consulta debe representar ingresos (`operation_type=income`), solicitar hasta cinco categorías (`limit=5`) y aplicar el rango activo. La respuesta `TopCategoriesResponse` contiene `category`, `operation_type` y `total_amount`.
 - `GET /api/metrics/facets` expone `categories`; la lista es global y no está filtrada por negocio ni por tipo de operación.
 - `GET /api/metrics/summary` admite `business_type`, `start_date`, `end_date` y `group_by` (default `month`). Devuelve entradas por período con `period`, `income`, `outcome` y `net`, no un total global. Para cada línea, el total del rango se obtiene agregando el campo `income` de todos los períodos de la respuesta. El porcentaje de cada categoría usa ese total completo como denominador, no la suma de las filas top.
-- La respuesta OpenAPI de `summary` usa `MetricsSummaryItem` con `period: string`, `income: number`, `outcome: number` y `net: number`. Ese tipo aún no existe en TypeScript; deberá definirse para la futura implementación y no se considera disponible en Fase 2.
+- La respuesta OpenAPI de `summary` usa `MetricsSummaryItem` con `period: string`, `income: number`, `outcome: number` y `net: number`; el tipo de respuesta es `MetricsSummaryResponse` en `frontend/specs/api-types.ts`.
 
 ### Requisitos funcionales
 
@@ -227,7 +229,7 @@ Como integrante del equipo de finanzas, quiero comparar en una página B2B y B2C
 6. Las facetas de categorías proceden de `facets`; las fechas opcionales usan `start_date`/`end_date` en `YYYY-MM-DD` y el rango se conserva al navegar entre páginas.
 7. Debajo de las tablas aparece un único gráfico que compara los ingresos completos B2B y B2C del rango activo.
 8. Durante la carga se indica el estado; ante errores se informa que la comparación no pudo completarse; sin ingresos se muestra el estado vacío correspondiente.
-9. La documentación de `summary` identifica los campos y tipos de `MetricsSummaryItem` y deja claro que aún falta su tipo TypeScript para la futura implementación.
+9. La respuesta de `summary` se representa con `MetricsSummaryResponse`, cuyos elementos usan `MetricsSummaryItem`.
 
 ### Fuera de alcance
 
