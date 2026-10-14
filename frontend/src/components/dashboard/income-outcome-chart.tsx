@@ -66,8 +66,8 @@ export function IncomeOutcomeChart({ data, loading }: IncomeOutcomeChartProps) {
   return (
     <Card className="border-border/60">
       <CardHeader className="pb-4">
-        <CardTitle className="text-base font-semibold">Income vs. Outcome</CardTitle>
-        <CardDescription>Monthly revenue and expenditure evolution</CardDescription>
+        <CardTitle className="text-base font-semibold">Income vs. expenses</CardTitle>
+        <CardDescription>Monthly income and expenses</CardDescription>
       </CardHeader>
       <CardContent>
         {!hasData ? (
@@ -100,7 +100,7 @@ export function IncomeOutcomeChart({ data, loading }: IncomeOutcomeChartProps) {
               <Line
                 type="monotone"
                 dataKey="income"
-                name="income"
+                name="Income"
                 stroke="var(--chart-income)"
                 strokeWidth={2}
                 dot={{ r: 3, fill: 'var(--chart-income)', strokeWidth: 0 }}
@@ -109,7 +109,7 @@ export function IncomeOutcomeChart({ data, loading }: IncomeOutcomeChartProps) {
               <Line
                 type="monotone"
                 dataKey="outcome"
-                name="outcome"
+                name="Expenses"
                 stroke="var(--chart-outcome)"
                 strokeWidth={2}
                 dot={{ r: 3, fill: 'var(--chart-outcome)', strokeWidth: 0 }}
@@ -120,12 +120,12 @@ export function IncomeOutcomeChart({ data, loading }: IncomeOutcomeChartProps) {
         )}
         {hasData ? (
           <table className="sr-only">
-            <caption>Monthly income and outcome values</caption>
+            <caption>Monthly income and expenses</caption>
             <thead>
               <tr>
                 <th scope="col">Month</th>
                 <th scope="col">Income</th>
-                <th scope="col">Outcome</th>
+                <th scope="col">Expenses</th>
               </tr>
             </thead>
             <tbody>
