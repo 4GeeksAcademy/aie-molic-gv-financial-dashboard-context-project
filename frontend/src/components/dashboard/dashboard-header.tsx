@@ -12,8 +12,10 @@ export function DashboardHeader({ period }: DashboardHeaderProps) {
           <LayoutDashboard size={18} />
         </span>
         <div>
-          <h1 className="text-xl font-semibold text-foreground tracking-tight">Financial Overview</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">Executive metrics dashboard</p>
+          <h1 className="text-xl font-semibold text-foreground tracking-tight">Financial Metrics Dashboard</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Review sample income, expenses, profit, and monthly trends.
+          </p>
         </div>
       </div>
       {period ? (
