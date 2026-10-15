@@ -50,10 +50,10 @@ export function KPICard({ label, value, helperText, icon: Icon, variant, loading
   }
 
   return (
-    <Card className="border-border/60 hover:border-border transition-colors">
+    <Card className="rounded-md border-border/60 bg-transparent shadow-none">
       <CardContent className="p-6 flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-muted-foreground tracking-wide uppercase text-pretty">
+          <span className="text-sm font-medium text-muted-foreground text-pretty">
             {label}
           </span>
           <span className={cn('p-1.5 rounded-lg', styles.badge)}>

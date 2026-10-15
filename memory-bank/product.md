@@ -45,3 +45,51 @@ Estas prioridades se derivan de fallos y decisiones sin resolver en el repositor
 3. Confirmar los requisitos de período y zona horaria antes de cambiar el rótulo 2024 o la agrupación mensual.
 
 No se han verificado usuarios objetivo, persistencia de datos reales ni funcionalidades de producto adicionales a las descritas en el código.
+
+## Ejercicio Agent Skills (2026-10-14 a 2026-10-15)
+
+### Skills instaladas y aplicadas
+
+| Skill | Estado y trabajo asociado |
+|---|---|
+| `accessibility` (comunitaria, `addyosmani/web-quality-skills`) | Instalada en `.agents/skills/accessibility/`; aplicada en `f0d9112`. El frontend anuncia carga y errores, marca las secciones ocupadas, ofrece tablas ocultas visualmente como alternativa a los gráficos y respeta `prefers-reduced-motion`. |
+| `frontend-design` (comunitaria, `anthropics/skills`) | Instalada en `.agents/skills/frontend-design/`; aplicada en `42bf19b`. Se deriva el período de los datos, se cargó IBM Plex Sans, se aclararon etiquetas y se redujo el peso visual de las tarjetas KPI. |
+| `seo-audit` (comunitaria, `coreyhaines31/marketingskills`) | Instalada en `.agents/skills/seo-audit/`; aplicada en `a4af555`. Se añadió título y descripción HTML, se alineó el H1 con el tema y `CardTitle` usa encabezados H2. |
+| `vercel-react-best-practices` (comunitaria, `vercel-labs/agent-skills`) | Instalada en `.agents/skills/vercel-react-best-practices/`; aplicada en `024c273`. Los gráficos se cargan con `React.lazy` y `Suspense`. La instalación de SWR se intentó, pero falló por `EAI_AGAIN` al resolver `registry.npmjs.org`; SWR no está instalado ni se considera implementado. |
+| `financial-contract-change` (interna) | Incorporada en `.agents/skills/financial-contract-change/SKILL.md` en `3ec741e` y aplicada en el mismo commit. El frontend valida el payload de movimientos antes de tratarlo como `FinancialMovement`. |
+
+Las cuatro skills comunitarias figuran en `skills-lock.json`. La skill financiera es interna y no forma parte de ese lockfile. No se incorporó una skill de diagnóstico Compose en el estado actual de esta rama.
+
+### Cambios frontend del ejercicio
+
+- `frontend/src/App.tsx`: carga diferida de los gráficos con fallback accesible; período derivado de los meses disponibles; validación del JSON de `/api/metrics` antes de procesarlo.
+- `frontend/src/lib/financial-types.ts`: type guards para la forma del movimiento, fecha ISO de forma `YYYY-MM-DD`, importe numérico finito y enums admitidos.
+- `frontend/src/lib/financial-utils.test.ts`: pruebas del contrato válido/inválido y de importes fraccionarios.
+- `frontend/src/components/dashboard/dashboard-header.tsx`, `kpi-card.tsx`, `kpi-row.tsx` e `income-outcome-chart.tsx`: período y copy del dashboard, etiquetas en estilo oración y contenido de gráficos coherente.
+- `frontend/src/components/dashboard/income-outcome-chart.tsx` y `profit-percent-chart.tsx`: tablas accesibles con valores mensuales.
+- `frontend/src/components/ui/card.tsx` y `skeleton.tsx`: títulos de tarjeta como H2 y pulso reducido para usuarios que lo solicitan.
+- `frontend/index.html` y `frontend/src/index.css`: metadatos SEO, carga de IBM Plex Sans y configuración de la fuente.
+
+No hubo cambios backend asociados a este ejercicio. La validación runtime frontend comprueba la forma conocida del payload, pero no genera tipos desde OpenAPI ni detecta automáticamente una futura divergencia del modelo Pydantic.
+
+### Verificaciones del ejercicio
+
+- `docker compose exec -T frontend npm test`: **8 tests pasados** en `financial-utils.test.ts`.
+- `docker compose exec -T frontend npm run build`: completó correctamente. La salida final separó el entry principal (~188.31 kB, gzip ~60.03 kB) del chunk `LineChart` (~342.30 kB, gzip ~100.46 kB). Se observó un aviso de tiempo del plugin `vite-resolve`; no impidió el build.
+- `docker compose exec -T frontend npm run lint`: completó correctamente.
+- `git diff --check -- frontend`: completó sin errores.
+- Diagnósticos del editor para los archivos frontend tocados: sin errores.
+- Tras los cambios SEO, el HTML servido localmente expuso el título y la meta descripción configurados. Esta comprobación no equivale a una auditoría SEO del dominio de producción.
+- Los commits `f53e32a`, `f0d9112`, `42bf19b`, `a4af555`, `024c273` y `3ec741e` están en `feature/agent-skills`; al revisar la rama, el árbol de trabajo estaba limpio y `origin/feature/agent-skills` era su upstream.
+
+No se ejecutaron pytest como parte de los cambios Agent Skills, porque no se modificó código backend. Tampoco se ejecutaron Lighthouse/axe ni pruebas manuales de teclado, lector de pantalla, zoom o movimiento reducido. No se validó SEO en Search Console ni contra un dominio público. La integración `/api/metrics` no se volvió a comprobar en este ejercicio: el timeout descrito arriba sigue siendo un antecedente histórico y su estado actual y causa raíz no están confirmados.
+
+### Estado y próximos pasos
+
+- La pantalla actual sigue consumiendo `GET /api/metrics`; los endpoints agregados backend no se conectaron a la UI en estos commits.
+- El code splitting reduce el entry inicial, pero el chunk de gráficos sigue pesando ~342 kB sin comprimir; medir LCP/INP en el entorno desplegado antes de priorizar más optimizaciones.
+- Si se requiere deduplicación/caché con SWR, restaurar acceso al registro npm, instalar la dependencia dentro de `frontend/` y validar de nuevo tests, lint y build.
+- Ejecutar una auditoría de accesibilidad renderizada y pruebas manuales; no inferir conformidad WCAG de los cambios de markup o del build.
+- Si el sitio debe posicionarse públicamente, confirmar dominio, público y objetivo de indexación antes de añadir canonical, `robots.txt` o sitemap; no hay Search Console verificado.
+- Mantener pendiente la decisión de negocio sobre zona horaria y precisión/redondeo monetario. No cambiar esas semánticas sin aprobación y tests acordes.
+- Si se necesita garantía automática frontend/backend, valorar una prueba de contrato basada en OpenAPI o generación de tipos; la validación actual solo protege el payload en runtime en el frontend.

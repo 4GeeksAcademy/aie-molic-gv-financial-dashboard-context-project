@@ -12,7 +12,7 @@ export function KPIRow({ metrics, loading }: KPIRowProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
       <KPICard
-        label="Total Income"
+        label="Total income"
         value={metrics ? formatCurrency(metrics.totalIncome) : '—'}
         helperText="Cumulative revenue from all income movements"
         icon={TrendingUp}
@@ -20,9 +20,9 @@ export function KPIRow({ metrics, loading }: KPIRowProps) {
         loading={loading}
       />
       <KPICard
-        label="Total Outcome"
+        label="Total expenses"
         value={metrics ? formatCurrency(metrics.totalOutcome) : '—'}
-        helperText="Total expenditure across all categories"
+        helperText="Total expenses across all categories"
         icon={TrendingDown}
         variant="outcome"
         loading={loading}
@@ -36,7 +36,7 @@ export function KPIRow({ metrics, loading }: KPIRowProps) {
         loading={loading}
       />
       <KPICard
-        label="Profit Margin"
+        label="Profit margin"
         value={metrics ? formatPercent(metrics.profitPercent) : '—'}
         helperText="Profit as a percentage of total income"
         icon={BarChart2}

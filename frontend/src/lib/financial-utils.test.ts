@@ -6,6 +6,7 @@ import {
   formatCurrency,
   formatPercent,
 } from "./financial-utils";
+import { isFinancialMovement, isFinancialMovementList } from "./financial-types";
 import type { FinancialMovement } from "./financial-types";
 
 const sampleMovements: FinancialMovement[] = [
@@ -31,6 +32,23 @@ const sampleMovements: FinancialMovement[] = [
     business_type: "B2C",
   },
 ];
+
+describe("financial movement contract", () => {
+  it("accepts a movement matching the API contract", () => {
+    expect(isFinancialMovement(sampleMovements[0])).toBe(true);
+    expect(isFinancialMovementList(sampleMovements)).toBe(true);
+  });
+
+  it("rejects invalid enum values and non-numeric amounts", () => {
+    expect(
+      isFinancialMovement({ ...sampleMovements[0], operation_type: "refund" }),
+    ).toBe(false);
+    expect(isFinancialMovement({ ...sampleMovements[0], amount: "1000" })).toBe(
+      false,
+    );
+    expect(isFinancialMovementList([sampleMovements[0], null])).toBe(false);
+  });
+});
 
 describe("computeKPIs", () => {
   it("calculates totals and profit values", () => {
@@ -62,6 +80,20 @@ describe("computeKPIs", () => {
       profit: -350,
       profitPercent: 0,
     });
+  });
+
+  it("calculates totals for fractional amounts without rounding them", () => {
+    const fractionalMovements: FinancialMovement[] = [
+      { ...sampleMovements[0], amount: 10.5 },
+      { ...sampleMovements[1], amount: 2.25 },
+    ];
+
+    const metrics = computeKPIs(fractionalMovements);
+
+    expect(metrics.totalIncome).toBe(10.5);
+    expect(metrics.totalOutcome).toBe(2.25);
+    expect(metrics.profit).toBe(8.25);
+    expect(metrics.profitPercent).toBeCloseTo((8.25 / 10.5) * 100);
   });
 });
 
