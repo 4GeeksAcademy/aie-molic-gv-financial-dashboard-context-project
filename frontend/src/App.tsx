@@ -6,6 +6,7 @@ import {
   type FinancialMovement,
   type KPIMetrics,
   type MonthlyDataPoint,
+  isFinancialMovementList,
 } from "@/lib/financial-types";
 import { computeKPIs, computeMonthlyData } from "@/lib/financial-utils";
 
@@ -48,7 +49,11 @@ async function fetchFinancialData(): Promise<FinancialMovement[]> {
   if (!response.ok) {
     throw new Error(`Failed to fetch financial data: ${response.status}`);
   }
-  return response.json();
+  const payload: unknown = await response.json();
+  if (!isFinancialMovementList(payload)) {
+    throw new Error("Invalid financial metrics response");
+  }
+  return payload;
 }
 
 function App() {
