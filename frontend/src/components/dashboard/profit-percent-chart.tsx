@@ -107,6 +107,25 @@ export function ProfitPercentChart({ data, loading }: ProfitPercentChartProps) {
             </LineChart>
           </ResponsiveContainer>
         )}
+        {hasData ? (
+          <table className="sr-only">
+            <caption>Monthly profit margin percentages</caption>
+            <thead>
+              <tr>
+                <th scope="col">Month</th>
+                <th scope="col">Profit margin</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.map((point) => (
+                <tr key={point.month}>
+                  <th scope="row">{point.month}</th>
+                  <td>{point.profitPercent.toFixed(1)}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : null}
       </CardContent>
     </Card>
   )

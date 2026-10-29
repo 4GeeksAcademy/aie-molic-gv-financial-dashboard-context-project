@@ -4,7 +4,7 @@ interface DashboardHeaderProps {
   period?: string
 }
 
-export function DashboardHeader({ period = '2024 — Full Year' }: DashboardHeaderProps) {
+export function DashboardHeader({ period }: DashboardHeaderProps) {
   return (
     <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
       <div className="flex items-center gap-3">
@@ -12,15 +12,19 @@ export function DashboardHeader({ period = '2024 — Full Year' }: DashboardHead
           <LayoutDashboard size={18} />
         </span>
         <div>
-          <h1 className="text-xl font-semibold text-foreground tracking-tight">Financial Overview</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">Executive metrics dashboard</p>
+          <h1 className="text-xl font-semibold text-foreground tracking-tight">Financial Metrics Dashboard</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Review sample income, expenses, profit, and monthly trends.
+          </p>
         </div>
       </div>
-      <div className="flex items-center gap-2">
-        <span className="inline-flex items-center rounded-full border border-border bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">
-          {period}
-        </span>
-      </div>
+      {period ? (
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center rounded-full border border-border bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">
+            {period}
+          </span>
+        </div>
+      ) : null}
     </header>
   )
 }
